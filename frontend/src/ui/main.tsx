@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import './utils/ensureElectronApi';
 import './index.css';
 import App from './App.tsx';
 import { HashRouter } from 'react-router-dom';

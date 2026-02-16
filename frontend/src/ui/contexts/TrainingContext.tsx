@@ -260,7 +260,7 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
 
     for (let i = 0; i < bytes.length; i += chunkSize) {
       const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, chunk);
+      binary += String.fromCharCode(...chunk);
     }
 
     return btoa(binary);
