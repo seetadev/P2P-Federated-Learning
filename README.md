@@ -4,7 +4,7 @@ A new way to train machine learning models without owning your own compute resou
 
 Our platform connects ML users, who want affordable model training, with trainers who have spare computing power lying idle (think gaming laptops or workstations with beefy GPUs).
 
-By combining Hedera blockchain, Akave O3 decentralized storage, and py-libp2p networking, we make sure the whole process runs in a way that’s transparent, trustless, and cost-efficient.
+By combining blockchain, Akave O3 decentralized storage, and py-libp2p networking, we make sure the whole process runs in a way that’s transparent, trustless, and cost-efficient.
 
 ## Demo Video Link
 
