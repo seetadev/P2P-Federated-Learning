@@ -98,10 +98,19 @@ Available commands:
 def load_keypair_from_env(env_path):
     # load keys from .env
     env = {}
+
     with open(env_path) as f:
-        for line in f:
-            k, v = line.strip().split("=", 1)
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            k, v = line.split("=", 1)
             env[k] = v
+
+    missing = [key for key in ("BOOTSTRAP_PRIVATE_KEY", "BOOTSTRAP_PUBLIC_KEY") if not env.get(key)]
+    if missing:
+        raise ValueError(f"Missing required env keys: {', '.join(missing)}")
 
     priv_b64 = env["BOOTSTRAP_PRIVATE_KEY"]
     pub_b64 = env["BOOTSTRAP_PUBLIC_KEY"]
@@ -204,16 +213,31 @@ class Node:
     def create_hcs_topic(self):
         logger.debug("Creating HCS topic")
         try:
-            topic_tx = (
-                TopicCreateTransaction(
-                    memo=f"{self.host.get_id()}: Logs",
-                    admin_key=self.operator_key.public_key(),
-                )
-                .freeze_with(self.client)
-                .sign(self.operator_key)
+            topic_tx = TopicCreateTransaction(
+                memo=f"{self.host.get_id()}: Logs",
+                admin_key=self.operator_key.public_key(),
             )
+            topic_tx.transaction_fee = 100_000_000  # 1 HBAR in tinybars
+            topic_tx = topic_tx.freeze_with(self.client).sign(self.operator_key)
             topic_receipt = topic_tx.execute(self.client)
-            logger.debug(f"HCS TOPIC: {topic_receipt.topic_id}")
+            status_code = int(topic_receipt.status)
+            status_name = (
+                ResponseCode(status_code).name
+                if status_code in ResponseCode._value2member_map_
+                else str(status_code)
+            )
+
+            if status_code != int(ResponseCode.SUCCESS):
+                raise Exception(
+                    f"HCS topic creation failed. status={status_name} ({status_code})"
+                )
+
+            if topic_receipt.topic_id is None:
+                raise Exception(
+                    f"HCS topic creation returned no topic_id. status={status_name} ({status_code})"
+                )
+
+            logger.debug(f"HCS TOPIC: {topic_receipt.topic_id} (status={status_name})")
             self.hcs_topic_id = topic_receipt.topic_id
 
             logger.info("Created HCS topic for logs")
@@ -222,6 +246,10 @@ class Node:
             logger.error(f"Error: Creating topic: {e}")
 
     def submit_hcs_message(self, message):
+        if self.hcs_topic_id is None:
+            print("Log submission failed: HCS topic is not initialized. Run create-hcs first.")
+            return
+
         transaction = (
             TopicMessageSubmitTransaction(topic_id=self.hcs_topic_id, message=message)
             .freeze_with(self.client)
@@ -555,7 +583,7 @@ class Node:
                         await self.query_hcs_topic_messages(self.hcs_topic_id)
 
                     if cmd == "greet":
-                        public_maddr = f"/ip4/{PUBLIC_IP}/tcp/{self.host.get_addrs()[0].value_for_protocol("tcp")}/p2p/{self.host.get_id()}"
+                        public_maddr = f"/ip4/{PUBLIC_IP}/tcp/{self.host.get_addrs()[0].value_for_protocol('tcp')}/p2p/{self.host.get_id()}"
 
                         await self.pubsub.publish(
                             FED_LEARNING_MESH,
@@ -580,7 +608,7 @@ class Node:
                         )
 
                     if cmd == "local":
-                        public_maddr = f"/ip4/{PUBLIC_IP}/tcp/{self.host.get_addrs()[0].value_for_protocol("tcp")}/p2p/{self.host.get_id()}"
+                        public_maddr = f"/ip4/{PUBLIC_IP}/tcp/{self.host.get_addrs()[0].value_for_protocol('tcp')}/p2p/{self.host.get_id()}"
                         logger.info(f"Public multiaddr: {public_maddr}")
 
                     if cmd == "help":
@@ -777,7 +805,7 @@ class Node:
                     return jsonify({"status": "ok", "peers": list(peers)})
 
                 elif cmd == "local":
-                    public_maddr = f"/ip4/{PUBLIC_IP}/tcp/{self.host.get_addrs()[0].value_for_protocol("tcp")}/p2p/{self.host.get_id()}"
+                    public_maddr = f"/ip4/{PUBLIC_IP}/tcp/{self.host.get_addrs()[0].value_for_protocol('tcp')}/p2p/{self.host.get_id()}"
                     return jsonify({"status": "ok", "addr": public_maddr})
 
                 else:

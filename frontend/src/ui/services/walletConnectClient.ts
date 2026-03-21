@@ -2,11 +2,9 @@ import { useContext, useEffect, useCallback } from 'react';
 import { WalletConnectContext } from '../contexts/WalletConnectContext';
 import {
   ContractExecuteTransaction,
-  ContractCallQuery,
   ContractId,
   Hbar,
   LedgerId,
-  Client,
 } from '@hashgraph/sdk';
 import {
   DAppConnector,
@@ -20,10 +18,10 @@ import type { SignClientTypes } from '@walletconnect/types';
 import EventEmitter from 'events';
 import type { ContractFunctionParameterBuilder } from './contractFunctionParameterBuilder';
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
-if (!projectId) {
-  throw new Error('VITE_WALLETCONNECT_PROJECT_ID is not set in .env');
-}
+const rawProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+const projectId = rawProjectId?.trim();
+const isWalletConnectConfigured =
+  !!projectId && projectId !== 'your_walletconnect_project_id';
 
 // Use an event emitter to signal state changes to the React component
 const refreshEvent = new EventEmitter();
@@ -35,36 +33,68 @@ const metadata: SignClientTypes.Metadata = {
   icons: [window.location.origin + '/vite.svg'],
 };
 
-export const dappConnector = new DAppConnector(
-  metadata,
-  LedgerId.TESTNET,
-  projectId,
-  Object.values(HederaJsonRpcMethod),
-  [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
-  [HederaChainId.Testnet]
-);
-
+let dappConnector: DAppConnector | null = null;
 let walletConnectInitPromise: Promise<void> | undefined = undefined;
+
+const getConnector = (): DAppConnector | null => {
+  if (!isWalletConnectConfigured) {
+    return null;
+  }
+
+  if (!dappConnector) {
+    try {
+      dappConnector = new DAppConnector(
+        metadata,
+        LedgerId.TESTNET,
+        projectId!,
+        Object.values(HederaJsonRpcMethod),
+        [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
+        [HederaChainId.Testnet]
+      );
+    } catch (error) {
+      console.error('WalletConnect setup failed:', error);
+      return null;
+    }
+  }
+
+  return dappConnector;
+};
+
 const initializeWalletConnect = async () => {
+  const connector = getConnector();
+  if (!connector) {
+    return;
+  }
+
   if (walletConnectInitPromise === undefined) {
-    walletConnectInitPromise = dappConnector.init();
+    walletConnectInitPromise = connector.init();
   }
   await walletConnectInitPromise;
 };
 
 export const openWalletConnectModal = async () => {
+  const connector = getConnector();
+  if (!connector) {
+    throw new Error(
+      'WalletConnect is not configured. Set VITE_WALLETCONNECT_PROJECT_ID in frontend/.env'
+    );
+  }
+
   await initializeWalletConnect();
   // The .then() ensures we emit the sync event AFTER the modal is closed
-  await dappConnector.openModal().then(() => {
+  await connector.openModal().then(() => {
     refreshEvent.emit('sync');
   });
 };
 
 class WalletConnectWallet {
-  // This is where transaction methods like transferHBAR will go.
-  // For now, it only needs the disconnect method.
   disconnect() {
-    dappConnector.disconnectAll().then(() => {
+    const connector = getConnector();
+    if (!connector) {
+      return;
+    }
+
+    connector.disconnectAll().then(() => {
       refreshEvent.emit('sync');
     });
   }
@@ -76,27 +106,33 @@ class WalletConnectWallet {
     gasLimit: number,
     payableAmount: Hbar
   ): Promise<string | null> {
-    const signerAccountId = dappConnector.signers[0]?.getAccountId();
-    if (!signerAccountId)
+    const connector = getConnector();
+    if (!connector) {
+      throw new Error(
+        'WalletConnect is not configured. Set VITE_WALLETCONNECT_PROJECT_ID in frontend/.env'
+      );
+    }
+
+    const signerAccountId = connector.signers[0]?.getAccountId();
+    if (!signerAccountId) {
       throw new Error('Wallet not connected or account not found.');
+    }
 
     const tx = new ContractExecuteTransaction()
       .setContractId(contractId)
       .setGas(gasLimit)
       .setFunction(functionName, functionParameters.buildHAPIParams())
       .setPayableAmount(payableAmount)
-      .freezeWithSigner(dappConnector.signers[0]);
+      .freezeWithSigner(connector.signers[0]);
 
     const params: SignAndExecuteTransactionParams = {
       signerAccountId: signerAccountId.toString(),
       transactionList: transactionToBase64String(await tx),
     };
 
-    const result = await dappConnector.signAndExecuteTransaction(params);
-    console.log(result);
+    const result = await connector.signAndExecuteTransaction(params);
     const transactionId = (result as any)?.transactionId;
 
-    console.log(transactionId);
     return transactionId || null;
   }
 }
@@ -109,7 +145,8 @@ export const WalletConnectClient = () => {
   const { setAccountId, setIsConnected } = useContext(WalletConnectContext);
 
   const syncWithWalletContext = useCallback(() => {
-    const signer = dappConnector.signers[0];
+    const connector = getConnector();
+    const signer = connector?.signers?.[0];
     const accountId = signer?.getAccountId()?.toString();
 
     if (accountId) {
@@ -122,17 +159,22 @@ export const WalletConnectClient = () => {
   }, [setAccountId, setIsConnected]);
 
   useEffect(() => {
-    initializeWalletConnect().then(() => {
-      syncWithWalletContext();
-    });
+    initializeWalletConnect()
+      .then(() => {
+        syncWithWalletContext();
+      })
+      .catch((error) => {
+        console.error('WalletConnect init failed:', error);
+        setAccountId('');
+        setIsConnected(false);
+      });
 
     refreshEvent.addListener('sync', syncWithWalletContext);
 
     return () => {
       refreshEvent.removeListener('sync', syncWithWalletContext);
     };
-  }, [syncWithWalletContext]);
+  }, [syncWithWalletContext, setAccountId, setIsConnected]);
 
   return null;
 };
-

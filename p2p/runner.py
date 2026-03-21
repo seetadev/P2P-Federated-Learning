@@ -145,7 +145,6 @@ async def interactive_shell() -> None:
 
                 while not node.termination_event.is_set():
                     try:
-                        _ = await trio.to_thread.run_sync(input)
                         user_input = await trio.to_thread.run_sync(
                             lambda: session.prompt("Command> ")
                         )
