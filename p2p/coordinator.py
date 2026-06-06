@@ -222,6 +222,8 @@ class Node:
             logger.error(f"Error: Creating topic: {e}")
 
     def submit_hcs_message(self, message):
+        return
+    
         transaction = (
             TopicMessageSubmitTransaction(topic_id=self.hcs_topic_id, message=message)
             .freeze_with(self.client)
@@ -327,6 +329,7 @@ class Node:
                         self.is_subscribed = True
 
                     if cmd == "train" and len(parts) == 3:
+                        print("train happened")
                         dataset_hash, model_hash, pub_key = parts[2].split(" ")
                         channel = parts[1]
 
@@ -334,9 +337,9 @@ class Node:
                         logger.debug(f"Participating nodes are: {nodes}")
                         logger.debug(f"The dataset_url is: {dataset_hash}")
                         logger.debug(f"The model_url is: {model_hash}")
-                        if not nodes:
-                            logger.error(f"No training nodes available in {channel}")
-                            continue
+                        # if not nodes:
+                        #     logger.error(f"No training nodes available in {channel}")
+                        #     continue
                         assignments = self.ml_trainer.assign_chunks_to_nodes(
                             dataset_hash, nodes
                         )
@@ -414,12 +417,12 @@ class Node:
                                             ),
                                         )
 
-                                        self.publish_on_chain(
-                                            int(self.subscribed_topics[-1]),
-                                            base64.b64encode(cipher1).decode("utf-8"),
-                                            base64.b64encode(cipher2).decode("utf-8"),
-                                            base64.b64encode(cipher3).decode("utf-8"),
-                                        )
+                                        # self.publish_on_chain(
+                                        #     int(self.subscribed_topics[-1]),
+                                        #     base64.b64encode(cipher1).decode("utf-8"),
+                                        #     base64.b64encode(cipher2).decode("utf-8"),
+                                        #     base64.b64encode(cipher3).decode("utf-8"),
+                                        # )
                                     else:
                                         msg = (
                                             f"No weights returned for chunk {chunk_cid}"
@@ -795,7 +798,7 @@ class Node:
 
     async def api_server(self):
         port = (
-            9000 if self.role == "bootstrap" or IS_CLOUD == "True" else find_free_port()
+            9000 if self.role == "client" or IS_CLOUD == "True" else find_free_port()
         )
         app = self.create_app()
         config = Config()
