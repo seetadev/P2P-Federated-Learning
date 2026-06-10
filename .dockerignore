@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.git/
+.gitignore
+*.md
+images/
+demo/
+tests/
+.idea/
+.vscode/
+.ruff_cache/
+.pytest_cache/
+.DS_Store
+downloaded-myfile.txt
+
+# Frontend (built separately)
+frontend/node_modules/
+frontend/dist/

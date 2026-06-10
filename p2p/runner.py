@@ -39,11 +39,13 @@ IS_OPERATOR_KEY = len(OPERATOR_KEY) != 0
 
 async def interactive_shell() -> None:
 
-    role = await trio.to_thread.run_sync(
-        lambda: input(
-            "Configure the role of the node client/trainer/bootstrap [default: bootstrap]: "
+    role = os.getenv("ROLE", "")
+    if not role:
+        role = await trio.to_thread.run_sync(
+            lambda: input(
+                "Configure the role of the node client/trainer/bootstrap [default: bootstrap]: "
+            )
         )
-    )
 
     if IS_OPERATOR_KEY == False:
         operator_key = await trio.to_thread.run_sync(
