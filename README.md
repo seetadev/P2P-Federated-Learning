@@ -33,11 +33,11 @@ yarn
 
 Then create a `.env` file and add:
 ```env
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-API_KEY=
-API_SECRET=
-JWT_TOKEN=
+VITE_JWT=
+VITE_PINATA_GATEWAY=
+VITE_BACKEND_URL=http://127.0.0.1:9000
+VITE_AKAVE_ENDPOINT=https://o3-rc3.akave.xyz
+VITE_AKAVE_BUCKET_NAME=<your-akave-bucket-name>
 ``` 
 
 ### P2P Network
@@ -45,9 +45,8 @@ Fire up a bootstrap node, client, or trainer:
 
 Populate the `.env` file in referece with the `.env.example`
 ```env
-API_KEY=
-API_SECRET= 
-JWT_TOKEN=
+AKAVE_ENDPOINT=https://o3-rc3.akave.xyz
+AKAVE_BUCKET_NAME=<your-akave-bucket-name>
 BOOTSTRAP_ADDR='/ip4/<IP-ADDRESS>/tcp/8000/p2p/QmXLkKS2Nw1v6N2sNjtzPQWMF2hrKtsHmKVfVG1ocN8FUV'
 BOOTSTRAP_PRIVATE_KEY=
 BOOTSTRAP_PUBLIC_KEY=
