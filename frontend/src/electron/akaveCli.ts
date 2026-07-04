@@ -7,9 +7,8 @@ import readline from 'readline';
 
 export class AkaveCliService {
   private readonly profile = 'akave-o3';
-  private readonly endpointUrl = 'https://o3-rc2.akave.xyz';
-  private readonly bucketName = 'akave-bucket';
-
+  private readonly endpointUrl = process.env.VITE_AKAVE_ENDPOINT || 'https://o3-rc3.akave.xyz';
+  private readonly bucketName = process.env.VITE_AKAVE_BUCKET_NAME || 'akave-bucket';
   public async configureAws(
     accessKey: string,
     secretKey: string

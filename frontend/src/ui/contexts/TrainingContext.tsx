@@ -29,7 +29,6 @@ import { useWalletInterface } from "../services/useWalletInterface";
 import { getTaskId } from "../utils/hederaHelper";
 import { data } from "react-router-dom";
 import { CONTRACT_ID, pinata_gatway, pinata_jwt } from "../utils/constant";
-import { PinataSDK } from "pinata";
 
 export type TrainingPhase =
   | "upload"
@@ -174,45 +173,21 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       console.log(modelHash);
 
       // PINATA IPFS UPLOAD
-      const pinata = new PinataSDK({
-        pinataJwt:
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJmNDI1ZjUyMy1iNzgwLTQ0YzktYTBmYi04NTdkYTkyOWFlOTkiLCJlbWFpbCI6ImFiaGluYXZhZ2Fyd2FsbGE2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiI0ZmI2MGRiZmQwYTI5MmY2NmJiMCIsInNjb3BlZEtleVNlY3JldCI6ImZiYjVmZDZlNDRiNTg1ZTAzMzY3ZjdiOTc0MjRiMzc4ODc5YWI3YjI2NzgyODgwNzE4NTVlYTA0ZDY4ZjdlMDQiLCJleHAiOjE4MTAyMTQ2OTR9.QHw-ZSPSs4l7q8YIx1ICmc4I3kE-3kaAQCEt_EHMQnU",
-        pinataGateway: pinata_gatway,
-      });
-
-      toast.loading("Uplaoding dataset to Pinata...", {
-        id: activeToastId.current,
-      });
-
-      // Upload dataset file
-      const datasetFile = new File(
-        [await fetch(datasetPath).then((r) => r.blob())],
-        "dataset",
-        { type: "application/octet-stream" },
-      );
-      const datasetUpload = await pinata.upload.public.file(datasetFile);
-      const datasetCID = datasetUpload.cid;
-
-      // Upload model file
-      const modelFile = new File(
-        [await fetch(modelPath).then((r) => r.blob())],
-        "model",
-        { type: "application/octet-stream" },
-      );
-      const modelUpload = await pinata.upload.public.file(modelFile);
-      const modelCid = modelUpload.cid;
-
-      toast.success("Pinata upload successful!", {
-        id: activeToastId.current,
-      });
-
-      
-
-      // ----------------
-
-      toast.success("Pinata upload successful!", {
-        id: activeToastId.current,
-      });
+      let datasetCID = "Skipped (No Pinata JWT)";
+      let modelCid = "Skipped (No Pinata JWT)";
+      try {
+        datasetCID = await window.electronAPI.uploadToPinata(datasetPath, pinata_jwt, pinata_gatway);
+        modelCid = await window.electronAPI.uploadToPinata(modelPath, pinata_jwt, pinata_gatway);
+        
+        toast.success("Pinata upload successful!", {
+          id: activeToastId.current,
+        });
+      } catch (pinataError) {
+        console.warn("Skipping Pinata backup due to missing or invalid JWT in .env");
+        toast.error("Pinata backup skipped (missing JWT)", {
+          id: activeToastId.current,
+        });
+      }
 
       // NEW THING HERE
       const content = `

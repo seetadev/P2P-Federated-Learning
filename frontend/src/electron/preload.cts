@@ -63,4 +63,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     return () => ipcRenderer.removeListener('hcs:new-log', subscription);
   },
+  uploadToPinata: (filePath: string, jwt: string, gateway: string) => 
+  ipcRenderer.invoke('pinata:uploadFile', filePath, jwt, gateway),
 });

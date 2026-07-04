@@ -32,6 +32,7 @@ export interface IElectronAPI {
   listFilesFromAkave: () => Promise<any[]>;
   fetchFileFromAkave: (objectKey: string) => Promise<string>;
   onAkaveProgress: (callback: (message: string) => void) => void;
+  uploadToPinata: (filePath: string, jwt: string, gateway: string) => Promise<string>;
   startLogSubscription: (data: { projectId: string; topicId: string }) => void;
   stopLogSubscription: () => void;
   getLogs: (projectId: string) => Promise<any[]>;

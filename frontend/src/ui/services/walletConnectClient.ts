@@ -83,6 +83,7 @@ class WalletConnectWallet {
     const tx = new ContractExecuteTransaction()
       .setContractId(contractId)
       .setGas(gasLimit)
+      .setMaxTransactionFee(new Hbar(5))
       .setFunction(functionName, functionParameters.buildHAPIParams())
       .setPayableAmount(payableAmount)
       .freezeWithSigner(dappConnector.signers[0]);
