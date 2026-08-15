@@ -12,13 +12,13 @@ cd P2P-Federated-Learning
 
 ### 2. Configure environment
 
-Create a `.env` file at the project root with your Pinata credentials in reference with
-the `.env.example` file
+Create a `.env` file at the project root with your Akave endpoints, and a separate `.env` file in the `frontend` folder for Pinata credentials.
 
-```
-API_KEY=
-API_SECRET= 
-JWT_TOKEN=
+Backend `.env` (Project root):
+```env
+AKAVE_ENDPOINT=https://o3-rc3.akave.xyz
+AKAVE_BUCKET_NAME=<your-akave-bucket-name>
+
 BOOTSTRAP_ADDR=
 BOOTSTRAP_PRIVATE_KEY=
 BOOTSTRAP_PUBLIC_KEY=
@@ -29,6 +29,15 @@ OPERATOR_KEY=
 NETWORK=
 CONTRACT_ID=
 TOPIC_ID=
+```
+
+Frontend `.env` (`frontend/`):
+```env
+VITE_JWT=
+VITE_PINATA_GATEWAY=
+VITE_BACKEND_URL=http://127.0.0.1:9000
+VITE_AKAVE_ENDPOINT=https://o3-rc3.akave.xyz
+VITE_AKAVE_BUCKET_NAME=<your-akave-bucket-name>
 ```
 #### 3. Install dependencies
 We use make targets for reproducibility.

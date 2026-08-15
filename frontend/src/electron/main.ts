@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import 'dotenv/config';
 import path from 'path';
 import { isDev } from './utils.js';
 import { resolvePath } from './pathResolver.js';

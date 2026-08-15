@@ -36,7 +36,7 @@ interface TrainResponse {
 }
 
 const apiClient = axios.create({
-  baseURL: "http://13.201.43.195:9000",
+  baseURL: import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:9000",
   headers: {
     "Content-Type": "application/json",
   },

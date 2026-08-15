@@ -14,6 +14,8 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 ACCESS_TOKEN = os.getenv("JWT_TOKEN")
+AKAVE_ENDPOINT = os.getenv("AKAVE_ENDPOINT", "https://o3-rc3.akave.xyz")
+AKAVE_BUCKET_NAME = os.getenv("AKAVE_BUCKET_NAME", "akave-bucket")
 
 logger = setup_logging("akave-client")
 
@@ -85,9 +87,9 @@ class Akave:
             "s3api",
             command,
             "--bucket",
-            "akave-bucket",
+            AKAVE_BUCKET_NAME,
             "--endpoint-url",
-            "https://o3-rc2.akave.xyz",
+            AKAVE_ENDPOINT,
             "--profile",
             "akave-o3",
         ]
@@ -108,12 +110,12 @@ class Akave:
         key: str,
         expires_in: int = 36000000,
         profile: str = "akave-o3",
-        endpoint_url: str = "https://o3-rc2.akave.xyz",
+        endpoint_url: str = AKAVE_ENDPOINT,
     ):
         """
         Generate a presigned URL for an S3 object using AWS CLI.
         """
-        bucket_name = "akave-bucket"
+        bucket_name = AKAVE_BUCKET_NAME
         s3_path = f"s3://{bucket_name}/{key}"
         logger.debug(f"Generating presigned URL for {s3_path}...")
         command = [
@@ -148,13 +150,13 @@ class Akave:
             "s3api",
             "put-object",
             "--bucket",
-            "akave-bucket",
+            AKAVE_BUCKET_NAME,
             "--key",
             key,
             "--body",
             file_path,
             "--endpoint-url",
-            "https://o3-rc2.akave.xyz",
+            AKAVE_ENDPOINT,
             "--profile",
             "akave-o3",
         ]
@@ -199,11 +201,11 @@ class Akave:
             "s3api",
             "get-object",
             "--bucket",
-            "akave-bucket",
+            AKAVE_BUCKET_NAME,
             "--key",
             object_key,
             "--endpoint-url",
-            "https://o3-rc2.akave.xyz",
+            AKAVE_ENDPOINT,
             "--profile",
             "akave-o3",
             f"./{object_key}",
@@ -248,13 +250,13 @@ class Akave:
                 "s3api",
                 "put-object",
                 "--bucket",
-                "akave-bucket",
+                AKAVE_BUCKET_NAME,
                 "--key",
                 key,
                 "--body",
                 tmp_file_path,
                 "--endpoint-url",
-                "https://o3-rc2.akave.xyz",
+                AKAVE_ENDPOINT,
                 "--profile",
                 "akave-o3",
             ]

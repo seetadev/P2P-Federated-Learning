@@ -482,6 +482,12 @@ class Node:
                             if peer["peer_id"] == self.host.get_id():
                                 peers.remove(peer)
                                 break
+                                
+                        if not peers:
+                            msg = f"No OTHER peers available in {parts[1]} mesh to connect to"
+                            logger.error(msg)
+                            self.submit_hcs_message(msg)
+                            continue
 
                         # Pick a random peer
                         chosen_peer = random.choice(peers)
@@ -489,6 +495,8 @@ class Node:
                             peer_maddr = chosen_peer["pub_maddr"]
                         else:
                             peer_maddr = chosen_peer["maddr"]
+                            # Fix: libp2p cannot dial 0.0.0.0, replace with 127.0.0.1 for local connections
+                            peer_maddr = peer_maddr.replace("0.0.0.0", "127.0.0.1")
 
                         msg = f"Selected random peer for connection:\n {peer_maddr}"
                         logger.info(msg)
@@ -505,8 +513,8 @@ class Node:
                             logger.info(msg)
                             self.submit_hcs_message(msg)
 
-                        except Exception:
-                            msg = f"Failed to connect to peer {peer_maddr}: e"
+                        except Exception as e:
+                            msg = f"Failed to connect to peer {peer_maddr}: {e}"
                             logger.error(msg)
                             self.submit_hcs_message(msg)
 

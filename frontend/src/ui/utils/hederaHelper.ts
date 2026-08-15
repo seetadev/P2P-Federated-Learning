@@ -3,6 +3,7 @@ import {
   Client,
   ContractFunctionParameters,
   AccountId,
+  Hbar,
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import Web3 from 'web3';
@@ -20,6 +21,7 @@ export const getTaskId = async () => {
   await delay(2000); // Wait for 2 seconds
   const client = Client.forTestnet();
   client.setOperator(OPERATOR_ID, OPERATOR_KEY);
+  client.setMaxQueryPayment(new Hbar(5));
 
   const tx_get = new ContractCallQuery()
     .setContractId(CONTRACT_ID)
@@ -35,6 +37,7 @@ export const checkTaskStatus = async (taskId: string): Promise<boolean> => {
   try {
     const client = Client.forTestnet();
     client.setOperator(OPERATOR_ID, OPERATOR_KEY);
+    client.setMaxQueryPayment(new Hbar(5));
     const query = new ContractCallQuery()
       .setContractId(CONTRACT_ID)
       .setGas(1_000_000)
