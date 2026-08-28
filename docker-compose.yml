@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+  bootstrap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: p2p-bootstrap
+    env_file:
+      - .env.bootstrap
+    environment:
+      - ROLE=bootstrap
+    ports:
+      - "8000:8000"
+      - "9000:9000"
+    networks:
+      - p2p-net
+    restart: unless-stopped
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: p2p-client
+    env_file:
+      - .env.client
+    environment:
+      - ROLE=client
+      - BOOTSTRAP_ADDR=/ip4/bootstrap/tcp/8000/p2p/QmXLkKS2Nw1v6N2sNjtzPQWMF2hrKtsHmKVfVG1ocN8FUV
+    ports:
+      - "9001:9000"
+    networks:
+      - p2p-net
+    depends_on:
+      - bootstrap
+    restart: unless-stopped
+
+  trainer1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: p2p-trainer-1
+    env_file:
+      - .env.trainer1
+    environment:
+      - ROLE=trainer
+      - BOOTSTRAP_ADDR=/ip4/bootstrap/tcp/8000/p2p/QmXLkKS2Nw1v6N2sNjtzPQWMF2hrKtsHmKVfVG1ocN8FUV
+    ports:
+      - "9002:9000"
+    networks:
+      - p2p-net
+    depends_on:
+      - bootstrap
+    restart: unless-stopped
+
+  trainer2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: p2p-trainer-2
+    env_file:
+      - .env.trainer2
+    environment:
+      - ROLE=trainer
+      - BOOTSTRAP_ADDR=/ip4/bootstrap/tcp/8000/p2p/QmXLkKS2Nw1v6N2sNjtzPQWMF2hrKtsHmKVfVG1ocN8FUV
+    ports:
+      - "9003:9000"
+    networks:
+      - p2p-net
+    depends_on:
+      - bootstrap
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: p2p-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://client:9000
+    networks:
+      - p2p-net
+    depends_on:
+      - client
+    restart: unless-stopped
+
+networks:
+  p2p-net:
+    driver: bridge

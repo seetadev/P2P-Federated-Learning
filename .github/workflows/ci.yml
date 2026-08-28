@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-python:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv==0.6.14
+      - name: Install dependencies
+        run: uv sync --all-extras --no-dev
+      - name: Run ruff
+        run: uv run ruff check .
+
+  test-python:
+    name: Test Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv==0.6.14
+      - name: Install dependencies
+        run: uv sync --all-extras
+      - name: Run pytest
+        run: uv run pytest . -v --timeout=60
+
+  lint-frontend:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: frontend/yarn.lock
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Run linter
+        run: yarn lint
+      - name: TypeScript check
+        run: npx tsc -b --noEmit
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: frontend/yarn.lock
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build
+        run: yarn build
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -t p2p-fedlearn-backend -f Dockerfile .
+      - name: Build frontend image
+        run: docker build -t p2p-fedlearn-frontend -f frontend/Dockerfile frontend/
